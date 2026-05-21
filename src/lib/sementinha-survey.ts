@@ -1,0 +1,241 @@
+export type QuestionType = "single" | "multiple" | "text";
+
+export type Question = {
+  key: string;
+  label: string;
+  type: QuestionType;
+  options?: string[];
+  allowComment?: boolean;
+  required?: boolean;
+};
+
+export const roleOptions = [
+  "Coordenação",
+  "Recebimento de doações",
+  "Organização do estoque",
+  "Montagem de cestas",
+  "Distribuição",
+  "Comunicação com doadores",
+  "Apoio eventual",
+  "Outro",
+];
+
+export const questions: Question[] = [
+  {
+    key: "dificuldades_etapas",
+    label: "Em quais etapas você percebe mais dificuldade hoje?",
+    type: "multiple",
+    required: true,
+    allowComment: true,
+    options: [
+      "Saber o que foi doado",
+      "Conferir validade dos alimentos",
+      "Separar alimentos por tipo",
+      "Controlar o estoque",
+      "Saber o que está faltando",
+      "Montar cestas equilibradas",
+      "Definir quem recebe",
+      "Registrar quem recebeu",
+      "Prestar contas",
+      "Organizar os voluntários",
+      "Comunicar necessidades aos doadores",
+      "Outro",
+    ],
+  },
+  {
+    key: "onde_informacoes_ficam",
+    label: "Onde as informações ficam registradas atualmente?",
+    type: "multiple",
+    required: true,
+    allowComment: true,
+    options: [
+      "WhatsApp",
+      "Caderno/papel",
+      "Planilha",
+      "Memória dos coordenadores",
+      "Fotos",
+      "Conversas presenciais",
+      "Não existe registro fixo",
+      "Outro",
+    ],
+  },
+  {
+    key: "controle_estoque_atual",
+    label: "Hoje, como vocês sabem quais alimentos existem em estoque?",
+    type: "single",
+    required: true,
+    allowComment: true,
+    options: [
+      "Existe controle atualizado",
+      "Existe controle, mas nem sempre atualizado",
+      "É necessário conferir fisicamente",
+      "Depende de perguntar para alguém",
+      "Não sabemos com clareza",
+      "Não sei responder",
+    ],
+  },
+  {
+    key: "controle_validade",
+    label: "Como é feito o controle de validade dos alimentos?",
+    type: "single",
+    required: true,
+    allowComment: true,
+    options: [
+      "É controlado item por item",
+      "É conferido na hora da montagem/distribuição",
+      "É conferido apenas quando alguém lembra",
+      "Não existe controle formal",
+      "Não sei responder",
+    ],
+  },
+  {
+    key: "preocupacoes",
+    label: "Quais situações mais geram preocupação ou desconforto?",
+    type: "multiple",
+    required: true,
+    allowComment: true,
+    options: [
+      "Medo de alimento vencer",
+      "Medo de faltar alimento",
+      "Medo de distribuir de forma desigual",
+      "Medo de esquecer alguma família",
+      "Dificuldade de saber quem já recebeu",
+      "Sobrecarga em poucas pessoas",
+      "Falta de clareza sobre responsabilidades",
+      "Informações espalhadas",
+      "Dificuldade para prestar contas",
+      "Dificuldade para orientar voluntários novos",
+      "Outro",
+    ],
+  },
+  {
+    key: "etapa_mais_critica",
+    label: "Qual etapa você considera mais crítica?",
+    type: "single",
+    required: true,
+    allowComment: true,
+    options: [
+      "Recebimento das doações",
+      "Triagem dos alimentos",
+      "Armazenamento",
+      "Controle de estoque",
+      "Montagem das cestas",
+      "Distribuição",
+      "Comunicação com doadores",
+      "Prestação de contas",
+      "Coordenação dos voluntários",
+    ],
+  },
+  {
+    key: "consome_tempo",
+    label: "O que mais consome tempo dos coordenadores hoje?",
+    type: "multiple",
+    required: true,
+    allowComment: true,
+    options: [
+      "Procurar informações",
+      "Conferir estoque",
+      "Conferir validade",
+      "Organizar voluntários",
+      "Responder mensagens",
+      "Montar listas",
+      "Corrigir erros",
+      "Explicar o processo várias vezes",
+      "Fazer prestação de contas",
+      "Outro",
+    ],
+  },
+  {
+    key: "cadastro_beneficiarios",
+    label: "Existe algum cadastro ou lista das pessoas/famílias atendidas?",
+    type: "single",
+    required: true,
+    allowComment: true,
+    options: [
+      "Sim, atualizado",
+      "Sim, mas precisa melhorar",
+      "Existe de forma informal",
+      "Não existe",
+      "Não sei responder",
+    ],
+  },
+  {
+    key: "registro_entrega",
+    label: "Como deveria ser o registro de entrega?",
+    type: "multiple",
+    required: true,
+    allowComment: true,
+    options: [
+      "Nome da pessoa/família",
+      "Data da entrega",
+      "Quantidade de cestas",
+      "Observações",
+      "Confirmação simples da entrega",
+      "Registro apenas interno, sem burocracia",
+      "Não vejo necessidade",
+      "Outro",
+    ],
+  },
+  {
+    key: "funcionalidades_mvp",
+    label: "Quais funcionalidades seriam mais úteis em uma primeira versão?",
+    type: "multiple",
+    required: true,
+    allowComment: true,
+    options: [
+      "Cadastro de doações recebidas",
+      "Controle de estoque",
+      "Alerta de validade",
+      "Lista de alimentos mais necessários",
+      "Cadastro de famílias atendidas",
+      "Registro de entregas",
+      "Relatórios simples",
+      "Página para doadores",
+      "Mensagens prontas para WhatsApp",
+      "Manual rápido para voluntários",
+      "Histórico de movimentações",
+      "Outro",
+    ],
+  },
+  {
+    key: "quem_acessa",
+    label: "Quem deveria poder acessar o sistema?",
+    type: "multiple",
+    required: true,
+    allowComment: true,
+    options: [
+      "Presidente/diretoria",
+      "Coordenadores do Sementinha",
+      "Voluntários fixos",
+      "Voluntários eventuais",
+      "Responsáveis pela prestação de contas",
+      "Apenas coordenação",
+      "Outro",
+    ],
+  },
+  {
+    key: "nao_pode_faltar",
+    label: "O que não pode faltar para o sistema funcionar bem?",
+    type: "text",
+    required: true,
+  },
+  {
+    key: "participar_teste",
+    label: "Você aceitaria participar de um teste inicial do sistema?",
+    type: "single",
+    required: true,
+    allowComment: true,
+    options: [
+      "Sim",
+      "Talvez",
+      "Prefiro apenas responder a pesquisa",
+      "Não neste momento",
+    ],
+  },
+];
+
+export function getQuestionInputHint(type: QuestionType) {
+  if (type === "multiple") return "Pode selecionar mais de uma opção.";
+  if (type === "single") return "Selecione apenas uma opção.";
+  return "Resposta em texto livre.";
+}
