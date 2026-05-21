@@ -6,7 +6,6 @@ import {
   questions,
   roleOptions,
 } from "@/lib/sementinha-survey";
-import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type AnswersState = Record<
   string,
@@ -136,39 +135,29 @@ export default function PesquisaSementinhaForm() {
     setIsSubmitting(true);
 
     try {
-      const { data: responseData, error: responseError } = await supabaseBrowser
-        .from("sementinha_survey_responses")
-        .insert({
-          wants_identification: wantsIdentification,
-          respondent_name: wantsIdentification ? respondentName.trim() : null,
-          respondent_contact: wantsIdentification
-            ? respondentContact.trim() || null
-            : null,
-          respondent_role: respondentRole,
-        })
-        .select("id")
-        .single();
+      const response = await fetch("/api/pesquisa-sementinha/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          wantsIdentification,
+          respondentName,
+          respondentContact,
+          respondentRole,
+          answers,
+        }),
+      });
 
-      if (responseError || !responseData) {
-        throw responseError ?? new Error("Não foi possível salvar a resposta.");
-      }
+      const result = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
 
-      const rows = questions.map((question) => ({
-        response_id: responseData.id,
-        question_key: question.key,
-        question_label: question.label,
-        answer_type: question.type,
-        selected_options: answers[question.key].selectedOptions,
-        answer_text: answers[question.key].answerText.trim() || null,
-        comment: answers[question.key].comment.trim() || null,
-      }));
-
-      const { error: answersError } = await supabaseBrowser
-        .from("sementinha_survey_answers")
-        .insert(rows);
-
-      if (answersError) {
-        throw answersError;
+      if (!response.ok) {
+        throw new Error(
+          result?.error ??
+            "Não foi possível enviar sua resposta agora. Por favor, tente novamente em alguns instantes.",
+        );
       }
 
       setSuccess(true);
@@ -176,7 +165,9 @@ export default function PesquisaSementinhaForm() {
     } catch (error) {
       console.error(error);
       setErrorMessage(
-        "Não foi possível enviar sua resposta agora. Por favor, tente novamente em alguns instantes.",
+        error instanceof Error
+          ? error.message
+          : "Não foi possível enviar sua resposta agora. Por favor, tente novamente em alguns instantes.",
       );
     } finally {
       setIsSubmitting(false);

@@ -31,6 +31,10 @@ create index if not exists sementinha_survey_answers_question_key_idx
 alter table public.sementinha_survey_responses enable row level security;
 alter table public.sementinha_survey_answers enable row level security;
 
+-- Permissões para envio público direto usando a anon key.
+-- A versão atual do formulário envia pelo servidor usando service_role,
+-- mas manter estas policies facilita testes futuros e evita bloqueio caso
+-- o envio direto volte a ser usado.
 drop policy if exists "Permitir envio publico de respostas Sementinha" on public.sementinha_survey_responses;
 drop policy if exists "Permitir envio publico de respostas Sementinha itens" on public.sementinha_survey_answers;
 
@@ -45,3 +49,11 @@ on public.sementinha_survey_answers
 for insert
 to anon
 with check (true);
+
+-- Grants explícitos para evitar falha de permissão em projetos Supabase
+-- com permissões padrão modificadas.
+grant usage on schema public to anon, authenticated, service_role;
+grant insert on public.sementinha_survey_responses to anon, authenticated;
+grant insert on public.sementinha_survey_answers to anon, authenticated;
+grant all on public.sementinha_survey_responses to service_role;
+grant all on public.sementinha_survey_answers to service_role;
