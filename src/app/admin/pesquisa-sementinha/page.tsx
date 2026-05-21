@@ -238,7 +238,7 @@ export default async function AdminPesquisaSementinhaPage({
           </h2>
           <p className="mt-1 text-sm text-zinc-600">
             Texto inicial para orientar a conversa e transformar respostas em
-            requisitos do MVP.
+            requisitos do MVP (minimum value product - produto mínimo viável).
           </p>
 
           <div className="mt-5 space-y-3">
