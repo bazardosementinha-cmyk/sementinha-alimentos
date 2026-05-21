@@ -1,243 +1,11 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase-browser";
-
-type QuestionType = "single" | "multiple" | "text";
-
-type Question = {
-  key: string;
-  label: string;
-  type: QuestionType;
-  options?: string[];
-  allowComment?: boolean;
-  required?: boolean;
-};
-
-const questions: Question[] = [
-  {
-    key: "dificuldades_etapas",
-    label: "Em quais etapas você percebe mais dificuldade hoje?",
-    type: "multiple",
-    required: true,
-    allowComment: true,
-    options: [
-      "Saber o que foi doado",
-      "Conferir validade dos alimentos",
-      "Separar alimentos por tipo",
-      "Controlar o estoque",
-      "Saber o que está faltando",
-      "Montar cestas equilibradas",
-      "Definir quem recebe",
-      "Registrar quem recebeu",
-      "Prestar contas",
-      "Organizar os voluntários",
-      "Comunicar necessidades aos doadores",
-      "Outro",
-    ],
-  },
-  {
-    key: "onde_informacoes_ficam",
-    label: "Onde as informações ficam registradas atualmente?",
-    type: "multiple",
-    required: true,
-    allowComment: true,
-    options: [
-      "WhatsApp",
-      "Caderno/papel",
-      "Planilha",
-      "Memória dos coordenadores",
-      "Fotos",
-      "Conversas presenciais",
-      "Não existe registro fixo",
-      "Outro",
-    ],
-  },
-  {
-    key: "controle_estoque_atual",
-    label: "Hoje, como vocês sabem quais alimentos existem em estoque?",
-    type: "single",
-    required: true,
-    allowComment: true,
-    options: [
-      "Existe controle atualizado",
-      "Existe controle, mas nem sempre atualizado",
-      "É necessário conferir fisicamente",
-      "Depende de perguntar para alguém",
-      "Não sabemos com clareza",
-      "Não sei responder",
-    ],
-  },
-  {
-    key: "controle_validade",
-    label: "Como é feito o controle de validade dos alimentos?",
-    type: "single",
-    required: true,
-    allowComment: true,
-    options: [
-      "É controlado item por item",
-      "É conferido na hora da montagem/distribuição",
-      "É conferido apenas quando alguém lembra",
-      "Não existe controle formal",
-      "Não sei responder",
-    ],
-  },
-  {
-    key: "preocupacoes",
-    label: "Quais situações mais geram preocupação ou desconforto?",
-    type: "multiple",
-    required: true,
-    allowComment: true,
-    options: [
-      "Medo de alimento vencer",
-      "Medo de faltar alimento",
-      "Medo de distribuir de forma desigual",
-      "Medo de esquecer alguma família",
-      "Dificuldade de saber quem já recebeu",
-      "Sobrecarga em poucas pessoas",
-      "Falta de clareza sobre responsabilidades",
-      "Informações espalhadas",
-      "Dificuldade para prestar contas",
-      "Dificuldade para orientar voluntários novos",
-      "Outro",
-    ],
-  },
-  {
-    key: "etapa_mais_critica",
-    label: "Qual etapa você considera mais crítica?",
-    type: "single",
-    required: true,
-    allowComment: true,
-    options: [
-      "Recebimento das doações",
-      "Triagem dos alimentos",
-      "Armazenamento",
-      "Controle de estoque",
-      "Montagem das cestas",
-      "Distribuição",
-      "Comunicação com doadores",
-      "Prestação de contas",
-      "Coordenação dos voluntários",
-    ],
-  },
-  {
-    key: "consome_tempo",
-    label: "O que mais consome tempo dos coordenadores hoje?",
-    type: "multiple",
-    required: true,
-    allowComment: true,
-    options: [
-      "Procurar informações",
-      "Conferir estoque",
-      "Conferir validade",
-      "Organizar voluntários",
-      "Responder mensagens",
-      "Montar listas",
-      "Corrigir erros",
-      "Explicar o processo várias vezes",
-      "Fazer prestação de contas",
-      "Outro",
-    ],
-  },
-  {
-    key: "cadastro_beneficiarios",
-    label: "Existe algum cadastro ou lista das pessoas/famílias atendidas?",
-    type: "single",
-    required: true,
-    allowComment: true,
-    options: [
-      "Sim, atualizado",
-      "Sim, mas precisa melhorar",
-      "Existe de forma informal",
-      "Não existe",
-      "Não sei responder",
-    ],
-  },
-  {
-    key: "registro_entrega",
-    label: "Como deveria ser o registro de entrega?",
-    type: "multiple",
-    required: true,
-    allowComment: true,
-    options: [
-      "Nome da pessoa/família",
-      "Data da entrega",
-      "Quantidade de cestas",
-      "Observações",
-      "Confirmação simples da entrega",
-      "Registro apenas interno, sem burocracia",
-      "Não vejo necessidade",
-      "Outro",
-    ],
-  },
-  {
-    key: "funcionalidades_mvp",
-    label: "Quais funcionalidades seriam mais úteis em uma primeira versão?",
-    type: "multiple",
-    required: true,
-    allowComment: true,
-    options: [
-      "Cadastro de doações recebidas",
-      "Controle de estoque",
-      "Alerta de validade",
-      "Lista de alimentos mais necessários",
-      "Cadastro de famílias atendidas",
-      "Registro de entregas",
-      "Relatórios simples",
-      "Página para doadores",
-      "Mensagens prontas para WhatsApp",
-      "Manual rápido para voluntários",
-      "Histórico de movimentações",
-      "Outro",
-    ],
-  },
-  {
-    key: "quem_acessa",
-    label: "Quem deveria poder acessar o sistema?",
-    type: "multiple",
-    required: true,
-    allowComment: true,
-    options: [
-      "Presidente/diretoria",
-      "Coordenadores do Sementinha",
-      "Voluntários fixos",
-      "Voluntários eventuais",
-      "Responsáveis pela prestação de contas",
-      "Apenas coordenação",
-      "Outro",
-    ],
-  },
-  {
-    key: "nao_pode_faltar",
-    label: "O que não pode faltar para o sistema funcionar bem?",
-    type: "text",
-    required: true,
-  },
-  {
-    key: "participar_teste",
-    label: "Você aceitaria participar de um teste inicial do sistema?",
-    type: "single",
-    required: true,
-    allowComment: true,
-    options: [
-      "Sim",
-      "Talvez",
-      "Prefiro apenas responder a pesquisa",
-      "Não neste momento",
-    ],
-  },
-];
-
-const roleOptions = [
-  "Coordenação",
-  "Recebimento de doações",
-  "Organização do estoque",
-  "Montagem de cestas",
-  "Distribuição",
-  "Comunicação com doadores",
-  "Apoio eventual",
-  "Outro",
-];
+import {
+  getQuestionInputHint,
+  questions,
+  roleOptions,
+} from "@/lib/sementinha-survey";
 
 type AnswersState = Record<
   string,
@@ -367,39 +135,29 @@ export default function PesquisaSementinhaForm() {
     setIsSubmitting(true);
 
     try {
-      const { data: responseData, error: responseError } = await supabaseBrowser
-        .from("sementinha_survey_responses")
-        .insert({
-          wants_identification: wantsIdentification,
-          respondent_name: wantsIdentification ? respondentName.trim() : null,
-          respondent_contact: wantsIdentification
-            ? respondentContact.trim() || null
-            : null,
-          respondent_role: respondentRole,
-        })
-        .select("id")
-        .single();
+      const response = await fetch("/api/pesquisa-sementinha/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          wantsIdentification,
+          respondentName,
+          respondentContact,
+          respondentRole,
+          answers,
+        }),
+      });
 
-      if (responseError || !responseData) {
-        throw responseError ?? new Error("Não foi possível salvar a resposta.");
-      }
+      const result = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
 
-      const rows = questions.map((question) => ({
-        response_id: responseData.id,
-        question_key: question.key,
-        question_label: question.label,
-        answer_type: question.type,
-        selected_options: answers[question.key].selectedOptions,
-        answer_text: answers[question.key].answerText.trim() || null,
-        comment: answers[question.key].comment.trim() || null,
-      }));
-
-      const { error: answersError } = await supabaseBrowser
-        .from("sementinha_survey_answers")
-        .insert(rows);
-
-      if (answersError) {
-        throw answersError;
+      if (!response.ok) {
+        throw new Error(
+          result?.error ??
+            "Não foi possível enviar sua resposta agora. Por favor, tente novamente em alguns instantes.",
+        );
       }
 
       setSuccess(true);
@@ -407,7 +165,9 @@ export default function PesquisaSementinhaForm() {
     } catch (error) {
       console.error(error);
       setErrorMessage(
-        "Não foi possível enviar sua resposta agora. Por favor, tente novamente em alguns instantes.",
+        error instanceof Error
+          ? error.message
+          : "Não foi possível enviar sua resposta agora. Por favor, tente novamente em alguns instantes.",
       );
     } finally {
       setIsSubmitting(false);
@@ -433,27 +193,43 @@ export default function PesquisaSementinhaForm() {
       <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200">
         <h2 className="mb-4 text-xl font-bold">Identificação</h2>
 
-        <label className="mb-4 flex items-start gap-3 rounded-2xl border border-zinc-200 p-4">
-          <input
-            type="checkbox"
-            checked={wantsIdentification}
-            onChange={(event) => setWantsIdentification(event.target.checked)}
-            className="mt-1"
-          />
-          <span>
-            Quero me identificar. Caso prefira, você também pode responder sem
-            informar seu nome.
-          </span>
-        </label>
+        <fieldset>
+          <legend className="mb-3 font-medium">Você deseja se identificar?</legend>
+          <p className="mb-3 text-sm text-zinc-600">Selecione apenas uma opção.</p>
+
+          <div className="space-y-2">
+            <label className="flex items-start gap-3 rounded-xl border border-zinc-200 p-3">
+              <input
+                type="radio"
+                name="wantsIdentification"
+                checked={wantsIdentification}
+                onChange={() => setWantsIdentification(true)}
+                className="mt-1"
+              />
+              <span>Sim, posso me identificar.</span>
+            </label>
+
+            <label className="flex items-start gap-3 rounded-xl border border-zinc-200 p-3">
+              <input
+                type="radio"
+                name="wantsIdentification"
+                checked={!wantsIdentification}
+                onChange={() => setWantsIdentification(false)}
+                className="mt-1"
+              />
+              <span>Prefiro responder sem me identificar.</span>
+            </label>
+          </div>
+        </fieldset>
 
         {wantsIdentification && (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
             <label className="block">
               <span className="mb-1 block font-medium">Nome</span>
               <input
                 value={respondentName}
                 onChange={(event) => setRespondentName(event.target.value)}
-                className="w-full rounded-xl border border-zinc-300 px-3 py-2"
+                className="w-full rounded-xl border border-zinc-300 px-3 py-2 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
                 placeholder="Seu nome"
               />
             </label>
@@ -463,16 +239,19 @@ export default function PesquisaSementinhaForm() {
               <input
                 value={respondentContact}
                 onChange={(event) => setRespondentContact(event.target.value)}
-                className="w-full rounded-xl border border-zinc-300 px-3 py-2"
+                className="w-full rounded-xl border border-zinc-300 px-3 py-2 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
                 placeholder="WhatsApp ou e-mail"
               />
             </label>
           </div>
         )}
 
-        <div className="mt-5">
-          <p className="mb-3 font-medium">
+        <fieldset className="mt-5">
+          <legend className="mb-2 font-medium">
             Qual é sua participação no Sementinha?
+          </legend>
+          <p className="mb-3 text-sm text-zinc-600">
+            Pode selecionar mais de uma opção.
           </p>
 
           <div className="grid gap-2 md:grid-cols-2">
@@ -491,7 +270,7 @@ export default function PesquisaSementinhaForm() {
               </label>
             ))}
           </div>
-        </div>
+        </fieldset>
       </section>
 
       {questions.map((question, index) => (
@@ -499,17 +278,24 @@ export default function PesquisaSementinhaForm() {
           key={question.key}
           className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200"
         >
-          <p className="mb-2 text-sm font-medium text-emerald-700">
-            Pergunta {index + 1}
-          </p>
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="mb-2 text-sm font-medium text-emerald-700">
+                Pergunta {index + 1}
+              </p>
+              <h2 className="text-xl font-bold">{question.label}</h2>
+            </div>
 
-          <h2 className="mb-4 text-xl font-bold">{question.label}</h2>
+            <span className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-800 ring-1 ring-emerald-100">
+              {getQuestionInputHint(question.type)}
+            </span>
+          </div>
 
           {question.type === "text" && (
             <textarea
               value={answers[question.key].answerText}
               onChange={(event) => updateText(question.key, event.target.value)}
-              className="min-h-32 w-full rounded-xl border border-zinc-300 px-3 py-2"
+              className="min-h-32 w-full rounded-xl border border-zinc-300 px-3 py-2 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
               placeholder="Escreva sua resposta..."
             />
           )}
@@ -567,7 +353,7 @@ export default function PesquisaSementinhaForm() {
                 onChange={(event) =>
                   updateComment(question.key, event.target.value)
                 }
-                className="min-h-24 w-full rounded-xl border border-zinc-300 px-3 py-2"
+                className="min-h-24 w-full rounded-xl border border-zinc-300 px-3 py-2 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
                 placeholder="Use este espaço se quiser explicar melhor..."
               />
             </label>
@@ -584,7 +370,7 @@ export default function PesquisaSementinhaForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-2xl bg-emerald-700 px-5 py-4 text-lg font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-2xl bg-emerald-700 px-5 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Enviando..." : "Enviar respostas"}
       </button>
