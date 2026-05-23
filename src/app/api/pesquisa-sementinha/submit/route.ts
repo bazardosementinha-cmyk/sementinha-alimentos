@@ -62,7 +62,14 @@ function validateOptions(
 }
 
 function validatePayload(payload: SubmitSurveyPayload) {
-  const wantsIdentification = payload.wantsIdentification === true;
+  if (typeof payload.wantsIdentification !== "boolean") {
+    return {
+      ok: false as const,
+      message: "Selecione se deseja se identificar ou responder sem se identificar.",
+    };
+  }
+
+  const wantsIdentification = payload.wantsIdentification;
   const respondentName = normalizeText(payload.respondentName);
   const respondentContact = normalizeText(payload.respondentContact);
   const respondentRole = normalizeStringArray(payload.respondentRole);

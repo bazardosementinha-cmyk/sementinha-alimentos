@@ -16,6 +16,31 @@ type AnswersState = Record<
   }
 >;
 
+type ValidationResult = {
+  key: string;
+  message: string;
+} | null;
+
+function getQuestionSectionId(questionKey: string) {
+  return `question-${questionKey}`;
+}
+
+function isQuestionAnswered(
+  questionKey: string,
+  answers: AnswersState,
+  questionType: "single" | "multiple" | "text",
+) {
+  const answer = answers[questionKey];
+
+  if (!answer) return false;
+
+  if (questionType === "text") {
+    return answer.answerText.trim().length >= 5;
+  }
+
+  return answer.selectedOptions.length > 0;
+}
+
 export default function PesquisaSementinhaForm() {
   const initialAnswers = useMemo(() => {
     return questions.reduce<AnswersState>((acc, question) => {
@@ -28,7 +53,9 @@ export default function PesquisaSementinhaForm() {
     }, {});
   }, []);
 
-  const [wantsIdentification, setWantsIdentification] = useState(false);
+  const [wantsIdentification, setWantsIdentification] = useState<boolean | null>(
+    null,
+  );
   const [respondentName, setRespondentName] = useState("");
   const [respondentContact, setRespondentContact] = useState("");
   const [respondentRole, setRespondentRole] = useState<string[]>([]);
@@ -36,6 +63,14 @@ export default function PesquisaSementinhaForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [invalidKey, setInvalidKey] = useState<string | null>(null);
+
+  function clearInvalidState(key: string) {
+    if (invalidKey === key) {
+      setInvalidKey(null);
+      setErrorMessage("");
+    }
+  }
 
   function toggleRole(role: string) {
     setRespondentRole((current) =>
@@ -43,6 +78,7 @@ export default function PesquisaSementinhaForm() {
         ? current.filter((item) => item !== role)
         : [...current, role],
     );
+    clearInvalidState("respondentRole");
   }
 
   function updateSingle(questionKey: string, option: string) {
@@ -53,6 +89,7 @@ export default function PesquisaSementinhaForm() {
         selectedOptions: [option],
       },
     }));
+    clearInvalidState(questionKey);
   }
 
   function toggleMultiple(questionKey: string, option: string) {
@@ -70,6 +107,7 @@ export default function PesquisaSementinhaForm() {
         },
       };
     });
+    clearInvalidState(questionKey);
   }
 
   function updateText(questionKey: string, value: string) {
@@ -80,6 +118,7 @@ export default function PesquisaSementinhaForm() {
         answerText: value,
       },
     }));
+    clearInvalidState(questionKey);
   }
 
   function updateComment(questionKey: string, value: string) {
@@ -92,33 +131,66 @@ export default function PesquisaSementinhaForm() {
     }));
   }
 
-  function validateForm() {
+  function validateForm(): ValidationResult {
+    if (wantsIdentification === null) {
+      return {
+        key: "wantsIdentification",
+        message: "Selecione se deseja se identificar ou responder sem se identificar.",
+      };
+    }
+
     if (wantsIdentification && respondentName.trim().length < 2) {
-      return "Informe seu nome ou marque que prefere responder sem se identificar.";
+      return {
+        key: "respondentName",
+        message:
+          "Informe seu nome ou marque a opção de responder sem se identificar.",
+      };
     }
 
     if (respondentRole.length === 0) {
-      return "Selecione pelo menos uma forma de participação no Sementinha.";
+      return {
+        key: "respondentRole",
+        message: "Selecione pelo menos uma forma de participação no Sementinha.",
+      };
     }
 
     for (const question of questions) {
       if (!question.required) continue;
 
-      const answer = answers[question.key];
+      const isAnswered = isQuestionAnswered(question.key, answers, question.type);
 
-      if (question.type === "text" && answer.answerText.trim().length < 5) {
-        return `Responda a pergunta: ${question.label}`;
+      if (!isAnswered && question.type === "text") {
+        return {
+          key: question.key,
+          message: `Responda a pergunta: ${question.label}`,
+        };
       }
 
-      if (
-        (question.type === "single" || question.type === "multiple") &&
-        answer.selectedOptions.length === 0
-      ) {
-        return `Selecione pelo menos uma opção na pergunta: ${question.label}`;
+      if (!isAnswered) {
+        return {
+          key: question.key,
+          message: `Selecione pelo menos uma opção na pergunta: ${question.label}`,
+        };
       }
     }
 
-    return "";
+    return null;
+  }
+
+  function scrollToInvalidField(key: string) {
+    const elementId =
+      key === "wantsIdentification" ||
+      key === "respondentName" ||
+      key === "respondentRole"
+        ? "identificacao-section"
+        : getQuestionSectionId(key);
+
+    window.setTimeout(() => {
+      document.getElementById(elementId)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 50);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -128,10 +200,13 @@ export default function PesquisaSementinhaForm() {
     const validationError = validateForm();
 
     if (validationError) {
-      setErrorMessage(validationError);
+      setInvalidKey(validationError.key);
+      setErrorMessage(validationError.message);
+      scrollToInvalidField(validationError.key);
       return;
     }
 
+    setInvalidKey(null);
     setIsSubmitting(true);
 
     try {
@@ -174,6 +249,24 @@ export default function PesquisaSementinhaForm() {
     }
   }
 
+  function getCardClassName(key: string) {
+    const isInvalid = invalidKey === key;
+
+    return [
+      "rounded-3xl bg-white p-6 shadow-sm ring-1 transition",
+      isInvalid ? "ring-red-300 bg-red-50/40" : "ring-zinc-200",
+    ].join(" ");
+  }
+
+  function getOptionClassName(isSelected: boolean) {
+    return [
+      "flex items-start gap-3 rounded-xl border p-3 transition",
+      isSelected
+        ? "border-emerald-300 bg-emerald-50"
+        : "border-zinc-200 bg-white",
+    ].join(" ");
+  }
+
   if (success) {
     return (
       <div className="rounded-3xl bg-white p-6 text-center shadow-sm ring-1 ring-emerald-200">
@@ -189,33 +282,47 @@ export default function PesquisaSementinhaForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200">
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+      <section id="identificacao-section" className={getCardClassName("wantsIdentification")}>
         <h2 className="mb-4 text-xl font-bold">Identificação</h2>
 
         <fieldset>
-          <legend className="mb-3 font-medium">Você deseja se identificar?</legend>
+          <legend className="mb-3 font-medium">
+            Você deseja se identificar? <span className="text-red-700">*</span>
+          </legend>
           <p className="mb-3 text-sm text-zinc-600">Selecione apenas uma opção.</p>
 
           <div className="space-y-2">
-            <label className="flex items-start gap-3 rounded-xl border border-zinc-200 p-3">
+            <label
+              className={getOptionClassName(wantsIdentification === true)}
+            >
               <input
                 type="radio"
                 name="wantsIdentification"
-                checked={wantsIdentification}
-                onChange={() => setWantsIdentification(true)}
+                checked={wantsIdentification === true}
+                onChange={() => {
+                  setWantsIdentification(true);
+                  clearInvalidState("wantsIdentification");
+                }}
                 className="mt-1"
+                required
               />
               <span>Sim, posso me identificar.</span>
             </label>
 
-            <label className="flex items-start gap-3 rounded-xl border border-zinc-200 p-3">
+            <label
+              className={getOptionClassName(wantsIdentification === false)}
+            >
               <input
                 type="radio"
                 name="wantsIdentification"
-                checked={!wantsIdentification}
-                onChange={() => setWantsIdentification(false)}
+                checked={wantsIdentification === false}
+                onChange={() => {
+                  setWantsIdentification(false);
+                  clearInvalidState("wantsIdentification");
+                }}
                 className="mt-1"
+                required
               />
               <span>Prefiro responder sem me identificar.</span>
             </label>
@@ -225,12 +332,24 @@ export default function PesquisaSementinhaForm() {
         {wantsIdentification && (
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block font-medium">Nome</span>
+              <span className="mb-1 block font-medium">
+                Nome <span className="text-red-700">*</span>
+              </span>
               <input
                 value={respondentName}
-                onChange={(event) => setRespondentName(event.target.value)}
-                className="w-full rounded-xl border border-zinc-300 px-3 py-2 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                onChange={(event) => {
+                  setRespondentName(event.target.value);
+                  clearInvalidState("respondentName");
+                }}
+                className={[
+                  "w-full rounded-xl border px-3 py-2 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100",
+                  invalidKey === "respondentName"
+                    ? "border-red-400 bg-red-50"
+                    : "border-zinc-300",
+                ].join(" ")}
                 placeholder="Seu nome"
+                required={wantsIdentification === true}
+                aria-invalid={invalidKey === "respondentName"}
               />
             </label>
 
@@ -248,7 +367,8 @@ export default function PesquisaSementinhaForm() {
 
         <fieldset className="mt-5">
           <legend className="mb-2 font-medium">
-            Qual é sua participação no Sementinha?
+            Qual é sua participação no Sementinha?{" "}
+            <span className="text-red-700">*</span>
           </legend>
           <p className="mb-3 text-sm text-zinc-600">
             Pode selecionar mais de uma opção.
@@ -258,7 +378,7 @@ export default function PesquisaSementinhaForm() {
             {roleOptions.map((role) => (
               <label
                 key={role}
-                className="flex items-start gap-3 rounded-xl border border-zinc-200 p-3"
+                className={getOptionClassName(respondentRole.includes(role))}
               >
                 <input
                   type="checkbox"
@@ -271,97 +391,134 @@ export default function PesquisaSementinhaForm() {
             ))}
           </div>
         </fieldset>
+
+        {(invalidKey === "wantsIdentification" ||
+          invalidKey === "respondentName" ||
+          invalidKey === "respondentRole") && (
+          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800">
+            {errorMessage}
+          </p>
+        )}
       </section>
 
-      {questions.map((question, index) => (
-        <section
-          key={question.key}
-          className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200"
-        >
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="mb-2 text-sm font-medium text-emerald-700">
-                Pergunta {index + 1}
-              </p>
-              <h2 className="text-xl font-bold">{question.label}</h2>
-            </div>
+      {questions.map((question, index) => {
+        const answer = answers[question.key];
+        const isInvalid = invalidKey === question.key;
 
-            <span className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-800 ring-1 ring-emerald-100">
-              {getQuestionInputHint(question.type)}
-            </span>
-          </div>
+        return (
+          <section
+            id={getQuestionSectionId(question.key)}
+            key={question.key}
+            className={getCardClassName(question.key)}
+          >
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="mb-2 text-sm font-medium text-emerald-700">
+                  Pergunta {index + 1}
+                </p>
+                <h2 className="text-xl font-bold">
+                  {question.label}{" "}
+                  {question.required && <span className="text-red-700">*</span>}
+                </h2>
+              </div>
 
-          {question.type === "text" && (
-            <textarea
-              value={answers[question.key].answerText}
-              onChange={(event) => updateText(question.key, event.target.value)}
-              className="min-h-32 w-full rounded-xl border border-zinc-300 px-3 py-2 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-              placeholder="Escreva sua resposta..."
-            />
-          )}
-
-          {question.type === "single" && (
-            <div className="space-y-2">
-              {question.options?.map((option) => (
-                <label
-                  key={option}
-                  className="flex items-start gap-3 rounded-xl border border-zinc-200 p-3"
-                >
-                  <input
-                    type="radio"
-                    name={question.key}
-                    checked={answers[question.key].selectedOptions.includes(
-                      option,
-                    )}
-                    onChange={() => updateSingle(question.key, option)}
-                    className="mt-1"
-                  />
-                  <span>{option}</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          {question.type === "multiple" && (
-            <div className="grid gap-2 md:grid-cols-2">
-              {question.options?.map((option) => (
-                <label
-                  key={option}
-                  className="flex items-start gap-3 rounded-xl border border-zinc-200 p-3"
-                >
-                  <input
-                    type="checkbox"
-                    checked={answers[question.key].selectedOptions.includes(
-                      option,
-                    )}
-                    onChange={() => toggleMultiple(question.key, option)}
-                    className="mt-1"
-                  />
-                  <span>{option}</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          {question.allowComment && (
-            <label className="mt-4 block">
-              <span className="mb-1 block font-medium">
-                Comentário opcional
+              <span className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-800 ring-1 ring-emerald-100">
+                {getQuestionInputHint(question.type)}
               </span>
-              <textarea
-                value={answers[question.key].comment}
-                onChange={(event) =>
-                  updateComment(question.key, event.target.value)
-                }
-                className="min-h-24 w-full rounded-xl border border-zinc-300 px-3 py-2 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                placeholder="Use este espaço se quiser explicar melhor..."
-              />
-            </label>
-          )}
-        </section>
-      ))}
+            </div>
 
-      {errorMessage && (
+            {question.type === "text" && (
+              <textarea
+                value={answer.answerText}
+                onChange={(event) =>
+                  updateText(question.key, event.target.value)
+                }
+                className={[
+                  "min-h-32 w-full rounded-xl border px-3 py-2 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100",
+                  isInvalid ? "border-red-400 bg-red-50" : "border-zinc-300",
+                ].join(" ")}
+                placeholder="Escreva sua resposta..."
+                required={question.required}
+                aria-invalid={isInvalid}
+              />
+            )}
+
+            {question.type === "single" && (
+              <div className="space-y-2">
+                {question.options?.map((option) => (
+                  <label
+                    key={option}
+                    className={getOptionClassName(
+                      answer.selectedOptions.includes(option),
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name={question.key}
+                      checked={answer.selectedOptions.includes(option)}
+                      onChange={() => updateSingle(question.key, option)}
+                      className="mt-1"
+                      required={question.required}
+                    />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {question.type === "multiple" && (
+              <div className="grid gap-2 md:grid-cols-2">
+                {question.options?.map((option) => (
+                  <label
+                    key={option}
+                    className={getOptionClassName(
+                      answer.selectedOptions.includes(option),
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={answer.selectedOptions.includes(option)}
+                      onChange={() => toggleMultiple(question.key, option)}
+                      className="mt-1"
+                    />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {question.allowComment && (
+              <label className="mt-4 block">
+                <span className="mb-1 block font-medium">
+                  Comentário opcional
+                </span>
+                <textarea
+                  value={answer.comment}
+                  onChange={(event) =>
+                    updateComment(question.key, event.target.value)
+                  }
+                  className="min-h-24 w-full rounded-xl border border-zinc-300 px-3 py-2 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                  placeholder="Use este espaço se quiser explicar melhor..."
+                />
+              </label>
+            )}
+
+            {isInvalid && (
+              <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800">
+                {errorMessage}
+              </p>
+            )}
+          </section>
+        );
+      })}
+
+      {errorMessage && !invalidKey && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800">
+          {errorMessage}
+        </div>
+      )}
+
+      {errorMessage && invalidKey && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800">
           {errorMessage}
         </div>
