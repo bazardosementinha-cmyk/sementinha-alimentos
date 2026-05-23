@@ -23,6 +23,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Centro Tucxa · Sementinha" }],
   creator: "Centro Tucxa · Sementinha",
   publisher: "Centro Tucxa · Sementinha",
+  verification: {
+    google: "9Xt9ub2AMCvzYXrqnHVN2-yLw5_nVuVkKaO0DSSc4hA",
+  },
   alternates: {
     canonical: "/",
   },
@@ -54,7 +57,9 @@ export const viewport: Viewport = {
   themeColor: "#047857",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
       <body>{children}</body>
